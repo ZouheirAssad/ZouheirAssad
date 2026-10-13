@@ -1,0 +1,218 @@
+<!doctype html>
+<html lang="ar">
+<head>
+<meta charset="utf-8">
+<title>Codex vs Claude Code overlay</title>
+<link rel="stylesheet" href="fonts/fonts.css">
+<style>
+:root{--cdx:#7A9DFF;--cdx2:#B1A7FF;--ccd:#E07B54;--ccd2:#FFB48C;--amber:#FFC24D;--txt:#F7F4EE}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:1080px;height:1920px;overflow:hidden;background:#000}
+body{font-family:'Cairo','Inter',sans-serif;color:var(--txt);-webkit-font-smoothing:antialiased}
+#stage{position:relative;width:1080px;height:1920px;overflow:hidden;background:#000}
+#cam{position:absolute;inset:0;transform-origin:540px 860px}
+#vid{position:absolute;left:0;top:0;width:1080px;height:1920px;display:block}
+canvas{position:absolute;left:0;top:0;width:1080px;height:1920px}
+.abs{position:absolute}
+.en{font-family:'Inter','Cairo',sans-serif;direction:ltr;unicode-bidi:isolate}
+
+/* logo stacks: fingertip dot + stem + label + app tile */
+.dot{position:absolute;width:26px;height:26px;margin:-13px 0 0 -13px;border-radius:50%;background:#fff}
+.ring{position:absolute;width:40px;height:40px;margin:-20px 0 0 -20px;border-radius:50%;border:5px solid #fff}
+.stem{position:absolute;width:4px;margin-left:-2px;border-radius:2px;transform-origin:50% 100%}
+.stack{position:absolute;left:0;top:0;width:0;height:0}
+.tile{position:absolute;width:176px;height:176px;left:-88px;top:-88px;border-radius:42px;overflow:hidden}
+.tile svg{width:100%;height:100%;display:block}
+.lbl{position:absolute;top:-31px;height:62px;padding:0 26px;border-radius:999px;background:rgba(10,12,18,.88);border:3px solid;display:flex;align-items:center;font:800 34px 'Inter';white-space:nowrap;direction:ltr;letter-spacing:-.5px}
+#cdx_t{box-shadow:0 0 0 5px rgba(255,255,255,.9),0 0 70px rgba(122,157,255,.85),0 22px 40px rgba(0,0,0,.45)}
+#ccd_t{background:#1F1E1D;box-shadow:0 0 0 5px rgba(255,255,255,.9),0 0 70px rgba(224,123,84,.85),0 22px 40px rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center}
+#ccd_t svg{width:74%;height:74%}
+#cdx_l{border-color:var(--cdx);color:#C9D3FF;box-shadow:0 0 30px rgba(122,157,255,.55)}
+#ccd_l{border-color:var(--ccd);color:#FFC7AE;box-shadow:0 0 30px rgba(224,123,84,.55)}
+#cdx_d{box-shadow:0 0 18px 6px rgba(122,157,255,.9)} #cdx_r{border-color:var(--cdx2)}
+#ccd_d{box-shadow:0 0 18px 6px rgba(224,123,84,.95)} #ccd_r{border-color:var(--ccd2)}
+#cdx_s{background:linear-gradient(0deg,rgba(255,255,255,.95),rgba(122,157,255,.9))}
+#ccd_s{background:linear-gradient(0deg,rgba(255,255,255,.95),rgba(224,123,84,.9))}
+
+/* captions (kinetic, word by word) */
+.capw{position:absolute;left:40px;right:40px;text-align:center;direction:rtl;perspective:1000px}
+.w{display:inline-block;white-space:pre;transform-origin:50% 85%}
+#c1{top:1268px;font:900 60px 'Cairo';color:#fff;text-shadow:0 4px 0 rgba(0,0,0,.35),0 8px 34px rgba(0,0,0,.85)}
+#c2{top:1356px;font:900 68px 'Cairo';word-spacing:6px;color:#fff;text-shadow:0 4px 0 rgba(0,0,0,.35),0 8px 34px rgba(0,0,0,.85)}
+.amb{color:var(--amber)}
+.wcdx{background:linear-gradient(90deg,#C3BBFF,#8FA6FF 50%,#5D6BFF);-webkit-background-clip:text;background-clip:text;color:transparent;text-shadow:none;padding:0 .04em;filter:drop-shadow(0 6px 20px rgba(0,0,0,.8))}
+.wccd{color:#F08A62}
+#c2 .en{font:900 62px 'Inter';letter-spacing:-1.5px;margin:0 4px}
+
+#flash{position:absolute;inset:0;opacity:0;background:#fff;display:none}
+#vig{position:absolute;inset:0;background:radial-gradient(ellipse at 50% 46%,transparent 52%,rgba(0,0,0,.42) 100%),linear-gradient(180deg,transparent 58%,rgba(0,0,0,.38) 100%)}
+</style>
+</head>
+<body>
+<div id="stage">
+<div id="cam">
+  <img id="vid" src="frames/001.jpg">
+  <div id="vig"></div>
+  <canvas id="fx" width="1080" height="1920"></canvas>
+  <!-- Codex (his right hand, screen-left) -->
+  <div class="stem" id="cdx_s"></div><div class="ring" id="cdx_r"></div><div class="dot" id="cdx_d"></div>
+  <div class="stack" id="cdx"><div class="lbl" id="cdx_l">Codex</div><div class="tile" id="cdx_t"></div></div>
+  <!-- Claude Code (his left hand, screen-right) -->
+  <div class="stem" id="ccd_s"></div><div class="ring" id="ccd_r"></div><div class="dot" id="ccd_d"></div>
+  <div class="stack" id="ccd"><div class="lbl" id="ccd_l">Claude Code</div><div class="tile" id="ccd_t"></div></div>
+</div>
+<div class="capw" id="c1"></div>
+<div class="capw" id="c2"></div>
+<div id="flash"></div>
+</div>
+
+<script>
+const W=1080,H=1920,FPS=30,NF=131,DUR=NF/FPS;
+const $=id=>document.getElementById(id);
+const clamp=(x,a=0,b=1)=>x<a?a:x>b?b:x;
+const P=(t,a,d)=>clamp((t-a)/d);
+const lerp=(a,b,p)=>a+(b-a)*p;
+const E={o3:x=>1-Math.pow(1-x,3),o5:x=>1-Math.pow(1-x,5),i3:x=>x*x*x,io3:x=>x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2,
+  back:x=>{const c1=2.0,c3=c1+1;return 1+c3*Math.pow(x-1,3)+c1*Math.pow(x-1,2)}};
+function mulberry(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+function hash(n){const x=Math.sin(n*127.1+311.7)*43758.5453;return x-Math.floor(x)}
+function noise1(t){const i=Math.floor(t),f=t-i,u=f*f*(3-2*f);return (hash(i)+(hash(i+1)-hash(i))*u)*2-1}
+function tr(el,{x=0,y=0,z=0,rx=0,ry=0,rz=0,s=1,o}={}){
+  el.style.transform=`translate3d(${x.toFixed(2)}px,${y.toFixed(2)}px,${z.toFixed(2)}px) rotateX(${rx.toFixed(2)}deg) rotateY(${ry.toFixed(2)}deg) rotateZ(${rz.toFixed(2)}deg) scale(${Math.max(s,.0001).toFixed(4)})`;
+  if(o!==undefined) el.style.opacity=clamp(o).toFixed(3);
+}
+
+/* ===== official logos ===== */
+/* Codex app icon (LobeHub icons "codex-color") */
+const CODEX='<svg viewBox="0 0 24 24"><path d="M19.503 0H4.496A4.496 4.496 0 000 4.496v15.007A4.496 4.496 0 004.496 24h15.007A4.496 4.496 0 0024 19.503V4.496A4.496 4.496 0 0019.503 0z" fill="#fff"/><path d="M9.064 3.344a4.578 4.578 0 012.285-.312c1 .115 1.891.54 2.673 1.275.01.01.024.017.037.021a.09.09 0 00.043 0 4.55 4.55 0 013.046.275l.047.022.116.057a4.581 4.581 0 012.188 2.399c.209.51.313 1.041.315 1.595a4.24 4.24 0 01-.134 1.223.123.123 0 00.03.115c.594.607.988 1.33 1.183 2.17.289 1.425-.007 2.71-.887 3.854l-.136.166a4.548 4.548 0 01-2.201 1.388.123.123 0 00-.081.076c-.191.551-.383 1.023-.74 1.494-.9 1.187-2.222 1.846-3.711 1.838-1.187-.006-2.239-.44-3.157-1.302a.107.107 0 00-.105-.024c-.388.125-.78.143-1.204.138a4.441 4.441 0 01-1.945-.466 4.544 4.544 0 01-1.61-1.335c-.152-.202-.303-.392-.414-.617a5.81 5.81 0 01-.37-.961 4.582 4.582 0 01-.014-2.298.124.124 0 00.006-.056.085.085 0 00-.027-.048 4.467 4.467 0 01-1.034-1.651 3.896 3.896 0 01-.251-1.192 5.189 5.189 0 01.141-1.6c.337-1.112.982-1.985 1.933-2.618.212-.141.413-.251.601-.33.215-.089.43-.164.646-.227a.098.098 0 00.065-.066 4.51 4.51 0 01.829-1.615 4.535 4.535 0 011.837-1.388zm3.482 10.565a.637.637 0 000 1.272h3.636a.637.637 0 100-1.272h-3.636zM8.462 9.23a.637.637 0 00-1.106.631l1.272 2.224-1.266 2.136a.636.636 0 101.095.649l1.454-2.455a.636.636 0 00.005-.64L8.462 9.23z" fill="url(#cdxg)"/><defs><linearGradient gradientUnits="userSpaceOnUse" id="cdxg" x1="12" x2="12" y1="3" y2="21"><stop stop-color="#B1A7FF"/><stop offset=".5" stop-color="#7A9DFF"/><stop offset="1" stop-color="#3941FF"/></linearGradient></defs></svg>';
+/* Claude Code mark (simple-icons "claudecode" / LobeHub "claudecode-color", #D97757) */
+const CLAUDECODE='<svg viewBox="0 0 24 24"><path fill-rule="evenodd" clip-rule="evenodd" fill="#D97757" d="M20.998 10.949H24v3.102h-3v3.028h-1.487V20H18v-2.921h-1.487V20H15v-2.921H9V20H7.488v-2.921H6V20H4.487v-2.921H3V14.05H0V10.95h3V5h17.998v5.949zM6 10.949h1.488V8.102H6v2.847zm10.51 0H18V8.102h-1.49v2.847z"/></svg>';
+
+/* ===== timing (from the voice: "سؤال المليون: واش Codex ولا Claude Code؟") ===== */
+const T_CDX=1.48, T_CCD=2.60, T_OUT=3.34;
+const CAP1=[{t:'سؤال',s:.16},{t:'المليون',s:.45,c:'amb'},{t:'💰',s:.82}];
+const CAP2=[{t:'واش',s:1.19},{t:'Codex',s:T_CDX,c:'en wcdx'},{t:'ولا',s:2.34},{t:'Claude Code',s:T_CCD,c:'en wccd'},{t:'؟',s:3.0,nos:1}];
+
+/* ===== fingertip tracks, read from the footage (frame number in the file, x, y) ===== */
+const TL=[[36,280,800],[40,316,746],[44,354,746],[48,344,724],[52,350,736],[56,344,730],[60,336,740],[64,320,754],[68,310,770],[72,306,786],[76,310,794],[80,316,796],[84,320,794],[88,326,790],[92,326,786],[96,330,784],[100,330,784],[104,370,800]].map(([f,x,y])=>[(f-1)/FPS,x,y]);
+const TR=[[70,870,810],[73,940,766],[76,974,776],[79,964,780],[82,964,774],[85,968,774],[88,970,776],[91,972,774],[94,970,774],[97,970,774],[100,966,770],[103,970,766]].map(([f,x,y])=>[(f-1)/FPS,x,y]);
+function track(K,t){
+  if(t<=K[0][0])return [K[0][1],K[0][2]];
+  for(let i=0;i<K.length-1;i++){const a=K[i],b=K[i+1];if(t<=b[0]){const p=(t-a[0])/(b[0]-a[0]);return [lerp(a[1],b[1],p),lerp(a[2],b[2],p)]}}
+  const l=K[K.length-1];return [l[1],l[2]];
+}
+
+/* ===== effects tables (real seconds) ===== */
+const SHAKE=[[T_CDX,9],[T_CCD,11]];
+const FLASH=[[T_CDX,.16,'#C9D3FF'],[T_CCD,.16,'#FFD2BF']];
+let BURSTS=[];
+const CUES=[
+ [.16,'swipe',{g:.22}],[1.19,'swipe',{g:.22}],
+ [T_CDX-.16,'whoosh',{d:.16,g:.45}],[T_CDX,'hit',{g:.55}],[T_CDX,'pop',{f:760,g:.45}],[T_CDX+.02,'shimmer',{g:.38}],
+ [T_CCD-.16,'whoosh',{d:.16,g:.45}],[T_CCD,'hit',{g:.62}],[T_CCD,'pop',{f:900,g:.45}],[T_CCD+.02,'shimmer',{g:.42}],
+ [3.0,'pop',{f:640,g:.25}],[T_OUT,'swoosh',{g:.35}]
+];
+
+/* ===== FX canvas (bursts) ===== */
+const fxc=$('fx').getContext('2d');
+function drawFX(t){
+  const c=fxc; c.clearRect(0,0,W,H);
+  const act=BURSTS.some(b=>t>=b.t&&t-b.t<=2.4); $('fx').style.display=act?'block':'none'; if(!act) return;
+  for(const b of BURSTS){const dt=t-b.t; if(dt<0||dt>2.4)continue;
+    c.globalCompositeOperation='lighter';
+    if(b.flare){const a=b.flare*Math.exp(-dt*7);if(a>.01){const g=c.createRadialGradient(b.x,b.y,0,b.x,b.y,420);g.addColorStop(0,`rgba(255,255,255,${a*.9})`);g.addColorStop(.25,`rgba(${b.rgb},${a*.4})`);g.addColorStop(1,'rgba(255,255,255,0)');c.fillStyle=g;c.fillRect(b.x-420,b.y-420,840,840)}}
+    if(b.ring){const q=clamp(dt/.5);if(q<1){const r=30+E.o3(q)*b.ring;c.strokeStyle=`rgba(255,255,255,${(1-q)*.9})`;c.lineWidth=12*(1-q)+1;c.beginPath();c.arc(b.x,b.y,r,0,6.2832);c.stroke()}}
+    c.globalCompositeOperation='source-over';
+    const rnd=mulberry(Math.floor(b.t*1000)+7+Math.floor(b.x));
+    for(let i=0;i<b.n;i++){
+      const ang=rnd()*6.2832, sp=b.spd*(.25+rnd()*.85), conf=b.kind==='confetti';
+      const life=.45+rnd()*(conf?1.2:.55), sz=conf?(10+rnd()*13):(3+rnd()*5), col=b.cols[Math.floor(rnd()*b.cols.length)], spin=(rnd()*2-1)*12, ph=rnd()*6.28;
+      if(dt>life)continue;
+      const k=conf?2.2:3.6, d=(1-Math.exp(-k*dt))/k;
+      const x=b.x+Math.cos(ang)*sp*d, y=b.y+Math.sin(ang)*sp*d+(b.g?470*dt*dt:0)-(conf?200*d:0);
+      c.globalAlpha=clamp(1-Math.pow(dt/life,2));
+      if(conf){c.save();c.translate(x,y);c.rotate(ph+spin*dt);c.scale(1,Math.cos(ph+dt*spin*1.3));c.fillStyle=col;c.fillRect(-sz/2,-sz*.3,sz,sz*.6);c.restore()}
+      else{const v=Math.exp(-k*dt);c.strokeStyle=col;c.lineWidth=sz*.65;c.lineCap='round';c.beginPath();c.moveTo(x,y);c.lineTo(x-Math.cos(ang)*sp*v*.04,y-Math.sin(ang)*sp*v*.04);c.stroke()}
+      c.globalAlpha=1;
+    }
+  }
+}
+
+/* ===== one logo stack that rides on a fingertip ===== */
+const GEO={cdx:{K:TL,T:T_CDX,dx:-30,maxx:1e9,rgb:'122,157,255',cols:['#B1A7FF','#7A9DFF','#3941FF','#fff']},
+           ccd:{K:TR,T:T_CCD,dx:-8,maxx:912,rgb:'224,123,84',cols:['#D97757','#FFB48C','#FFD27A','#fff']}};
+function stackPos(id,t){const g=GEO[id],[fx,fy]=track(g.K,t);return {fx,fy,cx:Math.min(fx+g.dx,g.maxx),ty:fy-206,ly:fy-74}}
+function stack(id,t){
+  const g=GEO[id], T=g.T, s=stackPos(id,t);
+  const on=t>=T-.02&&t<T_OUT+.25;
+  ['_s','_r','_d',''].forEach(k=>$(id+k).style.display=on?'block':'none'); if(!on) return;
+  const p=P(t,T,.38), q=E.i3(P(t,T_OUT,.2)), idle=P(t,T+.4,.3);
+  const bob=Math.sin((t-T)*3.2)*5*idle, sway=Math.sin((t-T)*2.4)*4*idle;
+  /* tile flies up out of the fingertip and overshoots into place */
+  const e=E.o5(p), sc=lerp(.15,1,E.back(p))*(1-q*.85);
+  const tx=lerp(s.fx,s.cx,e), ty=lerp(s.fy-20,s.ty,e)+bob-q*40;
+  const st=$(id); st.style.left=tx.toFixed(1)+'px'; st.style.top='0px';
+  tr($(id+'_t'),{x:0,y:ty,rz:lerp(-24,0,E.o3(p))+sway,ry:lerp(70,0,E.o3(p)),s:sc,o:clamp(p*5)*(1-q)});
+  const lp=P(t,T+.1,.32), lb=$(id+'_l');
+  lb.style.left=(-lb.offsetWidth/2).toFixed(1)+'px';
+  const lx=Math.min(0,1000-(tx+lb.offsetWidth/2));
+  tr(lb,{x:lx,y:lerp(s.fy-30,s.ly,E.o3(lp))+bob*.6-q*30,s:E.back(lp)*(1-q*.8),o:clamp(lp*4)*(1-q)});
+  /* fingertip dot, pulse ring and stem */
+  const dp=P(t,T-.02,.2);
+  tr($(id+'_d'),{x:s.fx,y:s.fy,s:E.back(dp)*(1+.12*Math.sin((t-T)*9)*idle)*(1-q),o:clamp(dp*4)*(1-q)});
+  const rp=P(t,T,.5); tr($(id+'_r'),{x:s.fx,y:s.fy,s:1+E.o3(rp)*3.2,o:(rp>0&&rp<1?1-rp:0)});
+  const stt=$(id+'_s'), top=s.ly+31, len=Math.max(0,s.fy-14-top)*E.o3(P(t,T+.08,.25));
+  stt.style.left=s.fx.toFixed(1)+'px'; stt.style.top=(s.fy-14-len).toFixed(1)+'px'; stt.style.height=len.toFixed(1)+'px';
+  stt.style.opacity=((1-q)*.95).toFixed(3);
+}
+
+/* ===== captions ===== */
+function buildCap(el,toks){
+  el.innerHTML='';
+  toks.forEach((k,i)=>{
+    if(i&&!k.nos) el.appendChild(document.createTextNode(' '));
+    const s=document.createElement('span'); s.className='w '+(k.c||''); s.textContent=k.t; el.appendChild(s); k.el=s;
+  });
+}
+function cap(toks,t){
+  toks.forEach(k=>{const p=P(t,k.s,.34),e=E.o3(p);
+    const em=Math.sin(Math.PI*P(t,k.s,.5))*.05;   /* the word being said pops a little */
+    tr(k.el,{y:(1-e)*36,rx:(1-e)*-95,s:1+em,o:clamp(p*2.5)})});
+}
+
+/* ===== camera ===== */
+function camera(t){
+  let sx=0,sy=0,rot=0;
+  for(const [te,a] of SHAKE){const dt=t-te;if(dt<0||dt>.6)continue;const e=a*Math.exp(-dt*9);sx+=noise1(t*35+te*13)*e;sy+=noise1(t*37+te*7+40)*e;rot+=noise1(t*29+te*3+90)*e*.04}
+  const z=1+.028*E.o3(P(t,T_CDX,.28))+.028*E.o3(P(t,T_CCD,.28));
+  $('cam').style.transform=`translate(${sx.toFixed(2)}px,${sy.toFixed(2)}px) rotate(${rot.toFixed(3)}deg) scale(${z.toFixed(4)})`;
+  let fa=0,fc='#fff';for(const [te,a,c] of FLASH){const dt=t-te;if(dt>=0&&dt<.35){const v=a*Math.exp(-dt*12);if(v>fa){fa=v;fc=c}}}
+  const fl=$('flash'); fl.style.opacity=fa.toFixed(3); fl.style.background=fc; fl.style.display=fa>.004?'block':'none';
+}
+
+/* ===== seek ===== */
+let curFrame=-1;
+async function seek(t){
+  const f=Math.min(NF-1,Math.max(0,Math.floor(t*FPS+1e-6)));
+  if(f!==curFrame){const im=$('vid');im.src=`frames/${String(f+1).padStart(3,'0')}.jpg`;await im.decode();curFrame=f}
+  camera(t); stack('cdx',t); stack('ccd',t); drawFX(t); cap(CAP1,t); cap(CAP2,t);
+}
+function init(){
+  $('cdx_t').innerHTML=CODEX; $('ccd_t').innerHTML=CLAUDECODE;
+  buildCap($('c1'),CAP1); buildCap($('c2'),CAP2);
+  for(const id of ['cdx','ccd']){const g=GEO[id],s=stackPos(id,g.T+.4);
+    BURSTS.push({t:g.T,x:s.cx,y:s.ty,n:34,spd:900,cols:g.cols,kind:'spark',ring:260,flare:.55,rgb:g.rgb},
+                {t:g.T+.05,x:s.cx,y:s.ty,n:26,spd:700,cols:g.cols,kind:'confetti',g:1});
+    const o=stackPos(id,T_OUT+.05);
+    BURSTS.push({t:T_OUT+.06,x:o.cx,y:o.ty-30,n:18,spd:500,cols:g.cols,kind:'spark',flare:.2,rgb:g.rgb});}
+}
+window.seek=seek; window.DUR=DUR; window.CUES=CUES; window.FS=1;
+window.MUSIC={intro:[],full:[],arp:[],breaks:[],twistKicks:[],bassHolds:[],final:DUR,cut:{intro:0,dip0:99,sweep0:99,sweep1:99,tw0:99,tw1:99},gate:[99,99]};
+document.fonts.ready.then(async()=>{
+  await Promise.all([...document.fonts].map(f=>f.load().catch(()=>{})));
+  init();
+  const q=new URLSearchParams(location.search);await seek(q.has('t')?parseFloat(q.get('t')):0);window.READY=true;
+});
+</script>
+</body>
+</html>
