@@ -2,12 +2,16 @@ import { Audio } from "@remotion/media";
 import { AbsoluteFill, Series, staticFile } from "remotion";
 import { CounterScene } from "./CounterScene";
 import { OutroScene } from "./OutroScene";
+import { ProfileScene } from "./ProfileScene";
 import { StatsScene } from "./StatsScene";
 import { ThanksScene } from "./ThanksScene";
 
 export const Celebration: React.FC = () => (
   <AbsoluteFill>
     <Series>
+      <Series.Sequence name="Profile" durationInFrames={120}>
+        <ProfileScene />
+      </Series.Sequence>
       <Series.Sequence name="Counter" durationInFrames={105}>
         <CounterScene />
       </Series.Sequence>

@@ -2,6 +2,7 @@ import { Composition, Folder } from "remotion";
 import { Celebration } from "./Celebration";
 import { CounterScene } from "./CounterScene";
 import { OutroScene } from "./OutroScene";
+import { ProfileScene } from "./ProfileScene";
 import { StatsScene } from "./StatsScene";
 import { ThanksScene } from "./ThanksScene";
 import {
@@ -9,6 +10,7 @@ import {
   FPS,
   HEIGHT,
   OUTRO_DURATION,
+  PROFILE_DURATION,
   STATS_DURATION,
   THANKS_DURATION,
   TOTAL_DURATION,
@@ -31,6 +33,12 @@ export const RemotionRoot: React.FC = () => {
         {...base}
       />
       <Folder name="Scenes">
+        <Composition
+          id="Profile"
+          component={ProfileScene}
+          durationInFrames={PROFILE_DURATION}
+          {...base}
+        />
         <Composition
           id="Counter"
           component={CounterScene}

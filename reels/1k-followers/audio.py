@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Synthesize public/soundtrack.wav (numpy only): an upbeat music bed plus SFX
-on the scene cue frames used in src/*.tsx (30 fps, 410 frames).
+on the scene cue frames used in src/*.tsx (30 fps, 530 frames).
 
 Usage: python3 audio.py
 """
@@ -10,7 +10,8 @@ import numpy as np
 
 SR = 48000
 FPS = 30
-TOTAL = 410 / FPS
+OFF = 120 / FPS  # profile-screenshot intro before the counter
+TOTAL = 530 / FPS
 rng = np.random.default_rng(7)
 out = np.zeros(int(TOTAL * SR) + SR)
 
@@ -102,7 +103,7 @@ def pad(freqs, d):
 
 # ---- music bed: 120 bpm, I–V–vi–IV in C, from the 1K hit to the end
 BEAT = 0.5
-start = 105 / FPS
+start = OFF + 105 / FPS
 chords = [[261.6, 329.6, 392.0], [196.0, 246.9, 392.0],
           [220.0, 261.6, 329.6], [174.6, 220.0, 349.2]]
 bar = 0
@@ -120,7 +121,7 @@ while t0 < TOTAL - 0.4:
 
 # build-up under the counter: soft pulse
 for k in range(8):
-    place(kick(), 12 / FPS + k * 0.28, 0.18 + k * 0.03)
+    place(kick(), OFF + 12 / FPS + k * 0.28, 0.18 + k * 0.03)
 
 # ---- SFX
 # counter ticks every 50 followers, following the counter's easing
@@ -136,20 +137,31 @@ last = -1
 for f in np.arange(12, 78, 0.25):
     v = int(bez(0.45, 0, 0.15, 1, (f - 12) / 66) * 20)
     if v != last:
-        place(tick(), f / FPS, 0.35)
+        place(tick(), OFF + f / FPS, 0.35)
         last = v
 
-place(whoosh(0.6), 87 / FPS, 0.25)            # into 1K
-place(boom(), 105 / FPS, 0.9)                 # 1K slam
-sparkle(105 / FPS)
-place(chime(1046.5), 119 / FPS, 0.8)          # "شكراً بزاف"
-place(whoosh(0.4, False), 200 / FPS, 0.2)
+# ---- profile intro
+place(whoosh(0.5), 0.0, 0.3)                  # phone rises in
+place(pop(500), 18 / FPS, 0.4)                # phone lands
+place(whoosh(0.8), 32 / FPS, 0.3)             # zoom to the follower count
+place(chime(1568.0), 66 / FPS, 0.5)           # highlight
+sparkle(70 / FPS, 10)
+place(pop(1000), 75 / FPS, 0.6)               # "وصلنا!"
+place(whoosh(0.5), 100 / FPS, 0.35)           # punch-in
+for k in range(3):                            # soft heartbeat under the intro
+    place(kick(), 0.6 + k * 0.6, 0.15)
+
+place(whoosh(0.6), OFF + 87 / FPS, 0.25)            # into 1K
+place(boom(), OFF + 105 / FPS, 0.9)                 # 1K slam
+sparkle(OFF + 105 / FPS)
+place(chime(1046.5), OFF + 119 / FPS, 0.8)          # "شكراً بزاف"
+place(whoosh(0.4, False), OFF + 200 / FPS, 0.2)
 for i in range(3):                            # stat cards
-    place(pop(700 + i * 180), (205 + 16 + i * 10) / FPS, 0.6)
-place(whoosh(0.5), 300 / FPS, 0.25)           # into outro
-place(boom(), 315 / FPS, 0.45)
-place(pop(1200), (315 + 52) / FPS, 0.6)       # follow button
-place(chime(1318.5), (315 + 84) / FPS, 0.5)
+    place(pop(700 + i * 180), OFF + (205 + 16 + i * 10) / FPS, 0.6)
+place(whoosh(0.5), OFF + 300 / FPS, 0.25)           # into outro
+place(boom(), OFF + 315 / FPS, 0.45)
+place(pop(1200), OFF + (315 + 52) / FPS, 0.6)       # follow button
+place(chime(1318.5), OFF + (315 + 84) / FPS, 0.5)
 
 # ---- master
 out = out[: int(TOTAL * SR)]

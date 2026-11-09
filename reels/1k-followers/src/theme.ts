@@ -6,11 +6,13 @@ export const WIDTH = 1080;
 export const HEIGHT = 1920;
 
 // Scene lengths (frames) — the main video is the sum of these.
+export const PROFILE_DURATION = 120;
 export const COUNTER_DURATION = 105;
 export const THANKS_DURATION = 100;
 export const STATS_DURATION = 95;
 export const OUTRO_DURATION = 110;
 export const TOTAL_DURATION =
+  PROFILE_DURATION +
   COUNTER_DURATION + THANKS_DURATION + STATS_DURATION + OUTRO_DURATION;
 
 export const COLORS = {

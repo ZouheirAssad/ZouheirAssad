@@ -1,8 +1,8 @@
 # 1K followers celebration (Remotion)
 
-13.7s vertical reel (1080×1920, 30 fps) for @zouheir.builds hitting 1,000 followers.
+17.7s vertical reel (1080×1920, 30 fps) for @zouheir.builds hitting 1,000 followers.
 
-Scenes (`src/`): Counter (0 → 1,000 with a progress ring) → Thanks (1K slam, confetti, "شكراً بزاف!") → Stats (24 posts, 58.3K views, AI topics) → Outro (next stop 10K + follow CTA).
+Scenes (`src/`): Profile (your real screenshot in a phone, zoom + highlight on "1,000 followers", "وصلنا!") → Counter (0 → 1,000 with a progress ring) → Thanks (1K slam, confetti, "شكراً بزاف!") → Stats (24 posts, 58.3K views, AI topics) → Outro (next stop 10K + follow CTA).
 
 ```bash
 npm i
