@@ -3,6 +3,12 @@ import { Celebration } from "./Celebration";
 import { CounterScene } from "./CounterScene";
 import { OutroScene } from "./OutroScene";
 import { ProfileScene } from "./ProfileScene";
+import { Celebration1KShort } from "./short/Celebration1KShort";
+import { DigitsScene } from "./short/DigitsScene";
+import { OutroBlock } from "./short/OutroBlock";
+import { SnapScene } from "./short/SnapScene";
+import { SHORT_DURATION, SHORT_SCENES } from "./short/style";
+import { ThanksBlock } from "./short/ThanksBlock";
 import { StatsScene } from "./StatsScene";
 import { ThanksScene } from "./ThanksScene";
 import {
@@ -32,6 +38,18 @@ export const RemotionRoot: React.FC = () => {
         durationInFrames={TOTAL_DURATION}
         {...base}
       />
+      <Composition
+        id="Celebration1KShort"
+        component={Celebration1KShort}
+        durationInFrames={SHORT_DURATION}
+        {...base}
+      />
+      <Folder name="Short-Scenes">
+        <Composition id="Snap" component={SnapScene} durationInFrames={SHORT_SCENES.snap} {...base} />
+        <Composition id="Digits" component={DigitsScene} durationInFrames={SHORT_SCENES.digits} {...base} />
+        <Composition id="ThanksBlock" component={ThanksBlock} durationInFrames={SHORT_SCENES.thanks} {...base} />
+        <Composition id="OutroBlock" component={OutroBlock} durationInFrames={SHORT_SCENES.outro} {...base} />
+      </Folder>
       <Folder name="Scenes">
         <Composition
           id="Profile"

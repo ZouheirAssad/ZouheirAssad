@@ -13,3 +13,12 @@ npx remotion render Celebration1K output/celebration-1k.mp4
 
 In the cloud sandbox add `--browser-executable=/opt/pw-browsers/chromium_headless_shell-1243/chrome-headless-shell-linux64/chrome-headless-shell` (no download access).
 Rendered file: `output/celebration-1k.mp4`.
+
+## Short cut — `Celebration1KShort` (9s)
+
+Different look: flat cream/orange/black blocks, hard stepped zooms with camera shake, stamped digits, scrolling type bands, skewed colour wipes, 120 bpm beat. Scenes in `src/short/`: Snap (screenshot zoom + highlighter + "وصلنا!") → Digits ("1,000" stamped on the beat) → ThanksBlock ("شكراً بزاف") → OutroBlock (10K, stat stickers, follow CTA).
+
+```bash
+python3 audio_short.py           # public/soundtrack-short.wav
+npx remotion render Celebration1KShort output/celebration-1k-short.mp4
+```
